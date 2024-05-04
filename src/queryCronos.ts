@@ -1,5 +1,5 @@
 import axios from 'axios';
-import Web3, { RpcError } from 'web3';
+import Web3 from 'web3';
 import dotenv from "dotenv";
 import { isAddress } from 'web3-validator';
 import { RPCError } from "./RPCError";
