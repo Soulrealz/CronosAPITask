@@ -6,7 +6,7 @@ import { RPCError } from "./RPCError";
 dotenv.config();
 
 // Use value in .env or public testnet if no such value is found
-const RPC_ENDPOINT: string = process.env.RPC || 'https://evm-t3.cronos.org'
+const RPC_ENDPOINT: string = process.env.RPC || 'https://evm.cronos.org'
 
 /**
  * @dev interface that allows the modification of addresses
