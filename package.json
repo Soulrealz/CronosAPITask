@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha CompiledJS/test",
+    "build": "npx tsc --outDir CompiledJS"
   },
   "keywords": [],
   "author": "",
@@ -16,8 +17,12 @@
     "web3": "^4.8.0"
   },
   "devDependencies": {
-    "@types/node": "^20.12.8",
-    "chai": "^5.1.0",
-    "mocha": "^10.4.0"
+    "@types/chai": "^4.3.15",
+    "@types/chai-as-promised": "^7.1.8",
+    "@types/mocha": "^10.0.6",
+    "chai": "4.3.6",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^10.4.0",
+    "typescript": "^5.4.5"
   }
 }

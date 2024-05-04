@@ -1,11 +1,20 @@
 import axios from 'axios';
-import Web3 from 'web3';
+import Web3, { RpcError } from 'web3';
 import dotenv from "dotenv";
 import { isAddress } from 'web3-validator';
+import { RPCError } from "./RPCError";
 dotenv.config();
 
 // Use value in .env or public testnet if no such value is found
 const RPC_ENDPOINT: string = process.env.RPC || 'https://evm-t3.cronos.org'
+
+/**
+ * @dev interface that allows the modification of addresses
+ * It is used to append 0x to the front of addresses that are lacking it.
+ */
+interface ModifiableAddress {
+    value: string;
+}
 
 /**
  * @dev check if the given address is in a valid format
@@ -13,16 +22,16 @@ const RPC_ENDPOINT: string = process.env.RPC || 'https://evm-t3.cronos.org'
  * @param addressToValidate address to be checked
  * @returns true if the address is valid, false if invalid
  */
-function isAddressValid(addressToValidate: string): boolean {
-    if (!isAddress(addressToValidate)) {
+function isAddressValid(addressToValidate: ModifiableAddress): boolean {
+    if (!isAddress(addressToValidate.value)) {
         return false;
     }
-    
+
     // The above check will return true for addresses
     // that don't start with 0x but have a correct format nonetheless
     // 0x has to be added to make the rpc calls work
-    if (!addressToValidate.startsWith("0x")) {
-        addressToValidate = "0x" + addressToValidate;
+    if (!addressToValidate.value.startsWith("0x")) {
+        addressToValidate.value = "0x" + addressToValidate.value;
     }
 
     return true;
@@ -33,9 +42,9 @@ function isAddressValid(addressToValidate: string): boolean {
  * 
  * @param data var that potentially contains error object with info on what happened
  */
-function validateResponseData(data:any ) {
+function validateResponseData(data: any) {
     if ('error' in data) {
-        throw new Error(`Execution failed. Error Code: ${data.error.code}. Error Message: ${data.error.message}`);
+        throw new RPCError("Execution Failed", data.error.code, data.error.message);
     }
 }
 
@@ -44,7 +53,7 @@ function validateResponseData(data:any ) {
  * @param hexnumber number to convert
  * @returns converted number 
  */
-function parseHexToDecimal(hexnumber:any ): number {
+function parseHexToDecimal(hexnumber: any): number {
     return parseInt(hexnumber, 16);
 }
 
@@ -55,14 +64,15 @@ function parseHexToDecimal(hexnumber:any ): number {
  * @returns User CRO balance
  */
 export async function getCROBalance(target_address: string) {
-    if (!isAddressValid(target_address)) {
-        throw new Error(`Address, ${target_address}, is in invalid format`);
+    const target: ModifiableAddress = { value: target_address };
+    if (!isAddressValid(target)) {
+        throw new Error(`Address, ${target.value}, is invalid`);
     }
 
     const response = await axios.post(RPC_ENDPOINT, {
         jsonrpc: '2.0',
         method: 'eth_getBalance',
-        params: [target_address, 'latest'],
+        params: [target.value, 'latest'],
         id: 1
     })
     validateResponseData(response.data);
@@ -80,20 +90,22 @@ export async function getCROBalance(target_address: string) {
  * @returns User CRC20 Balance
  */
 export async function getTokenBalance(contractAddress: string, address: string): Promise<number> {
-    if (!isAddressValid(contractAddress)) {
-        throw new Error(`Contract Address, ${contractAddress}, is in invalid format`);
+    const contract: ModifiableAddress = { value: contractAddress };
+    const user: ModifiableAddress = { value: address };
+    if (!isAddressValid(contract)) {
+        throw new Error(`Contract Address, ${contract.value}, is invalid`);
     }
-    if (!isAddressValid(address)) {
-        throw new Error(`User Address, ${address}, is in invalid format`);
-    }    
-    
-    const encodedData = encodeData(address);
+    if (!isAddressValid(user)) {
+        throw new Error(`User Address, ${user.value}, is invalid`);
+    }
+
+    const encodedData = encodeData(user.value);
 
     const response = await axios.post(RPC_ENDPOINT, {
         jsonrpc: '2.0',
         method: 'eth_call',
         params: [{
-            to: contractAddress,
+            to: contract.value,
             data: encodedData,
         }, 'latest'],
         id: 1,
@@ -109,7 +121,7 @@ export async function getTokenBalance(contractAddress: string, address: string):
  * @param address - address to be encoded with the selector
  * @returns encoded selector + data
  */
-function encodeData(address: string): string {    
+function encodeData(address: string): string {
     // Needed for encoding
     const web3 = new Web3();
     const signature = 'balanceOf(address)';

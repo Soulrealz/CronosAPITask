@@ -2,7 +2,8 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-import { getTokenBalance, getCROBalance } from "../Services";
+import { getTokenBalance, getCROBalance } from "./queryCronos";
+import { RPCError } from "./RPCError";
 
 /**
  * @dev endpoint for CRO Balance
@@ -15,14 +16,18 @@ app.get('/CRO-balance/:address', async (req: any, res: any) => {
         const result = await getCROBalance(address);
         res.json({ result });
     } catch (error: any) {
-        console.log("err.msg: ", error.message);
-        res.status(500).json({ error: error.message });
+        if (error instanceof RPCError) {
+            res.status(500).json({
+                message: error.userMessage,
+                errorCode: error.errorCode,
+                errorMessage: error.errorMessage
+            });
+        } else {
+            res.status(400).json({ error: error.message});
+        }
     }
 });
 
-//BNB Smart Contract - 0xfA9343C3897324496A05fC75abeD6bAC29f8A40f
-//Top BNB Holder - 0xfA9343C3897324496A05fC75abeD6bAC29f8A40f
-//Taken from - https://cronoscan.com/token/0xfa9343c3897324496a05fc75abed6bac29f8a40f#balances
 /**
  * @dev endpoint for crc20 token balance
  * 
@@ -35,8 +40,15 @@ app.get('/CRC20-balance/:contractAddress/:address', async (req: any, res: any) =
         const balance = await getTokenBalance(contractAddress, address);
         res.json({ balance });
     } catch (error: any) {
-        console.log("err.msg: ", error.message);
-        res.status(500).json({ error: error.message });
+        if (error instanceof RPCError) {
+            res.status(500).json({
+                message: error.userMessage,
+                errorCode: error.errorCode,
+                errorMessage: error.errorMessage
+            });
+        } else {
+            res.status(400).json({ error: error.message});
+        }
     }
 });
 
