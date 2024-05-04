@@ -5,7 +5,7 @@ import { isAddress } from 'web3-validator';
 import { RPCError } from "./RPCError";
 dotenv.config();
 
-// Use value in .env or public testnet if no such value is found
+// Use value in .env or public mainnet if no such value is found
 const RPC_ENDPOINT: string = process.env.RPC || 'https://evm.cronos.org'
 
 /**
